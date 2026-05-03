@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>SuperPOD</RootNamespace>
+    <AssemblyName>SuperPOD</AssemblyName>
+    <LangVersion>9.0</LangVersion>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!-- Detect ONI install path -->
+  <PropertyGroup>
+    <ONIManagedDir Condition="Exists('$(HOME)/Library/Application Support/Steam/steamapps/common/OxygenNotIncluded/OxygenNotIncluded.app/Contents/Resources/Data/Managed')">$(HOME)/Library/Application Support/Steam/steamapps/common/OxygenNotIncluded/OxygenNotIncluded.app/Contents/Resources/Data/Managed</ONIManagedDir>
+    <ONIManagedDir Condition="'$(ONIManagedDir)' == '' And Exists('C:\Program Files (x86)\Steam\steamapps\common\OxygenNotIncluded\OxygenNotIncluded_Data\Managed')">C:\Program Files (x86)\Steam\steamapps\common\OxygenNotIncluded\OxygenNotIncluded_Data\Managed</ONIManagedDir>
+    <ONIManagedDir Condition="'$(ONIManagedDir)' == '' And Exists('$(HOME)/.steam/steam/steamapps/common/OxygenNotIncluded/OxygenNotIncluded_Data/Managed')">$(HOME)/.steam/steam/steamapps/common/OxygenNotIncluded/OxygenNotIncluded_Data/Managed</ONIManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony" HintPath="$(ONIManagedDir)/0Harmony.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(ONIManagedDir)/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="Assembly-CSharp-firstpass" HintPath="$(ONIManagedDir)/Assembly-CSharp-firstpass.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ONIManagedDir)/UnityEngine.CoreModule.dll" Private="false" />
+  </ItemGroup>
+
+</Project>
