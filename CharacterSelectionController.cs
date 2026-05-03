@@ -26,7 +26,7 @@ namespace SuperPOD
                     if (i == 56)
                     {
                         codes[i] = new CodeInstruction(OpCodes.Call,
-                            AccessTools.Method(typeof(ConfigData), "GetCarePackageNumber"));
+                            AccessTools.Method(typeof(SuperPODOptions), "GetCarePackageNumber"));
                     }
 
                     // Skip instructions 59-61 (original duplicant count)
@@ -37,7 +37,7 @@ namespace SuperPOD
                     if (i == 62)
                     {
                         codes[i] = new CodeInstruction(OpCodes.Call,
-                            AccessTools.Method(typeof(ConfigData), "GetDuplicantNumber"));
+                            AccessTools.Method(typeof(SuperPODOptions), "GetDuplicantNumber"));
                     }
                 }
 

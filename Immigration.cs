@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace SuperPOD
 {
@@ -9,12 +10,11 @@ namespace SuperPOD
         {
             private static void Prefix(Immigration __instance)
             {
-                var config = ConfigHelper<ConfigData>.GetConfig("config.ini");
-                if (config.TimeBeforeSpawn < 0f)
-                    config.TimeBeforeSpawn = 0f;
+                var opts = SuperPODOptions.Instance;
+                float spawn = Mathf.Max((float)opts.TimeBeforeSpawn, 0f);
 
-                __instance.spawnInterval[0] = config.TimeBeforeSpawn;
-                __instance.spawnInterval[1] = config.TimeBeforeSpawn;
+                __instance.spawnInterval[0] = spawn;
+                __instance.spawnInterval[1] = spawn;
             }
         }
 
@@ -23,14 +23,13 @@ namespace SuperPOD
         {
             private static void Prefix(Immigration __instance)
             {
-                var config = ConfigHelper<ConfigData>.GetConfig("config.ini");
-                if (config.TimeBeforeSpawn < 0f)
-                    config.TimeBeforeSpawn = 0f;
+                var opts = SuperPODOptions.Instance;
+                float spawn = Mathf.Max((float)opts.TimeBeforeSpawn, 0f);
 
-                if (__instance.spawnInterval[1] != config.TimeBeforeSpawn)
+                if (__instance.spawnInterval[1] != spawn)
                 {
-                    __instance.spawnInterval[1] = config.TimeBeforeSpawn;
-                    __instance.timeBeforeSpawn = config.TimeBeforeSpawn;
+                    __instance.spawnInterval[1] = spawn;
+                    __instance.timeBeforeSpawn = spawn;
                 }
             }
         }

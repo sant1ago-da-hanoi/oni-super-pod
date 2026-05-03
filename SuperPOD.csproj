@@ -7,6 +7,7 @@
     <LangVersion>9.0</LangVersion>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <!-- Detect ONI install path -->
@@ -21,6 +22,30 @@
     <Reference Include="Assembly-CSharp" HintPath="$(ONIManagedDir)/Assembly-CSharp.dll" Private="false" />
     <Reference Include="Assembly-CSharp-firstpass" HintPath="$(ONIManagedDir)/Assembly-CSharp-firstpass.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ONIManagedDir)/UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ONIManagedDir)/UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(ONIManagedDir)/Newtonsoft.Json.dll" Private="false" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PLib" Version="4.22.0" PrivateAssets="all" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.40" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- ILRepack: merge PLib into output DLL -->
+  <Target Name="MergePLib" AfterTargets="Build">
+    <ItemGroup>
+      <InputAssemblies Include="$(TargetPath)" />
+      <InputAssemblies Include="$(TargetDir)PLib.dll" Condition="Exists('$(TargetDir)PLib.dll')" />
+    </ItemGroup>
+    <ILRepack
+      TargetKind="SameAsPrimaryAssembly"
+      OutputFile="$(TargetPath)"
+      InputAssemblies="@(InputAssemblies)"
+      Internalize="true"
+      Parallel="true"
+      DebugInfo="true"
+      LibraryPath="$(ONIManagedDir)" />
+    <Delete Files="$(TargetDir)PLib.dll" Condition="Exists('$(TargetDir)PLib.dll')" />
+  </Target>
 
 </Project>

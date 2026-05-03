@@ -19,7 +19,7 @@ namespace SuperPOD
                 if (__instance.personality.model == GameTags.Minions.Models.Bionic)
                     return true;
 
-                int num = ConfigData.GetInterestNumber();
+                int num = SuperPODOptions.GetInterestNumber();
                 var list = new List<SkillGroup>(Db.Get().SkillGroups.resources);
                 list.RemoveAll((SkillGroup match) => !match.allowAsAptitude);
                 Util.Shuffle(list);
@@ -52,14 +52,14 @@ namespace SuperPOD
                 if (__instance.personality.model == GameTags.Minions.Models.Bionic)
                     return true;
 
-                DUPLICANTSTATS.MAX_TRAITS = ConfigData.GetMaxTraits();
+                DUPLICANTSTATS.MAX_TRAITS = SuperPODOptions.GetMaxTraits();
 
                 int statDelta = 0;
                 var selectedTraits = new List<string>();
                 var randSeed = new KRandom();
 
                 // --- Stress trait (from config) ---
-                string stressId = ConfigData.GetStress();
+                string stressId = SuperPODOptions.GetStress();
                 if (!string.IsNullOrEmpty(stressId))
                 {
                     __instance.personality.stresstrait = stressId;
@@ -76,7 +76,7 @@ namespace SuperPOD
                 }
 
                 // --- Joy trait (from config) ---
-                string joyId = ConfigData.GetOverjoyed();
+                string joyId = SuperPODOptions.GetOverjoyed();
                 if (!string.IsNullOrEmpty(joyId))
                 {
                     __instance.personality.joyTrait = joyId;
@@ -175,8 +175,8 @@ namespace SuperPOD
                     return false;
                 };
 
-                int positiveTarget = ConfigData.GetPositiveTraitsNumber();
-                int negativeTarget = ConfigData.GetNegativeTraitsNumber();
+                int positiveTarget = SuperPODOptions.GetPositiveTraitsNumber();
+                int negativeTarget = SuperPODOptions.GetNegativeTraitsNumber();
                 int positiveCount = 0;
                 int negativeCount = 0;
                 int maxAttempts = (positiveTarget + negativeTarget) * 4;
@@ -221,7 +221,7 @@ namespace SuperPOD
                         {
                             Debug.LogError("Need to add " + attrId + " to TUNING.DUPLICANTSTATS.ALL_ATTRIBUTES");
                         }
-                        __instance.StartingLevels[attrId] = ConfigData.GetInterestValue();
+                        __instance.StartingLevels[attrId] = SuperPODOptions.GetInterestValue();
                     }
                 }
 

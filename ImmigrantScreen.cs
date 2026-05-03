@@ -14,7 +14,6 @@ namespace SuperPOD
 
             private static bool Prefix(ImmigrantScreen __instance)
             {
-                ConfigHelper<ConfigData>.GetConfig("config.ini");
 
                 // Debounce — prevent rapid re-rolls
                 if (Time.realtimeSinceStartup - markTime < 0.666f)
