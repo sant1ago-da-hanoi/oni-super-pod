@@ -44,7 +44,7 @@ public class ConfigHelper<T>
                 if (line.StartsWith("#") || line.StartsWith(";") || !line.Contains("="))
                     continue;
 
-                Match match = Regex.Match(line, @"^(?<key>[a-zA-Z_][a-zA-Z_\d.]*)\\s*=(?<val>.+)$");
+                Match match = Regex.Match(line, @"^(?<key>[a-zA-Z_][a-zA-Z_\d.]*)\s*=\s*(?<val>.+)$");
                 if (match.Success)
                 {
                     string key = match.Groups["key"].Value.Trim();

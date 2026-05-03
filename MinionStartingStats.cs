@@ -15,8 +15,13 @@ namespace SuperPOD
         {
             private static bool Prefix(MinionStartingStats __instance, string guaranteedAptitudeID = null)
             {
+                // Skip Bionic duplicants
+                if (__instance.personality.model == GameTags.Minions.Models.Bionic)
+                    return true;
+
                 int num = ConfigData.GetInterestNumber();
                 var list = new List<SkillGroup>(Db.Get().SkillGroups.resources);
+                list.RemoveAll((SkillGroup match) => !match.allowAsAptitude);
                 Util.Shuffle(list);
 
                 if (guaranteedAptitudeID != null)
@@ -26,6 +31,7 @@ namespace SuperPOD
                     num--;
                 }
 
+                num = Mathf.Min(num, list.Count);
                 for (int i = 0; i < num; i++)
                 {
                     __instance.skillAptitudes.Add(list[i], DUPLICANTSTATS.APTITUDE_BONUS);
@@ -42,25 +48,90 @@ namespace SuperPOD
                 bool is_starter_minion, List<ChoreGroup> disabled_chore_groups,
                 string guaranteedAptitudeID = null)
             {
+                // Bionic duplicants have their own trait logic — let the game handle them
+                if (__instance.personality.model == GameTags.Minions.Models.Bionic)
+                    return true;
+
                 DUPLICANTSTATS.MAX_TRAITS = ConfigData.GetMaxTraits();
-                __instance.personality.stresstrait = ConfigData.GetStress();
-                __instance.personality.joyTrait = ConfigData.GetOverjoyed();
 
                 int statDelta = 0;
                 var selectedTraits = new List<string>();
                 var randSeed = new KRandom();
 
-                Trait stressTrait = Db.Get().traits.Get(__instance.personality.stresstrait);
-                __instance.stressTrait = stressTrait;
+                // --- Stress trait (from config) ---
+                string stressId = ConfigData.GetStress();
+                if (!string.IsNullOrEmpty(stressId))
+                {
+                    __instance.personality.stresstrait = stressId;
+                    Trait stressTrait = Db.Get().traits.TryGet(stressId);
+                    if (stressTrait != null)
+                        __instance.stressTrait = stressTrait;
+                }
+                else
+                {
+                    // Fallback: use personality default
+                    Trait stressTrait = Db.Get().traits.TryGet(__instance.personality.stresstrait);
+                    if (stressTrait != null)
+                        __instance.stressTrait = stressTrait;
+                }
 
-                Trait joyTrait = Db.Get().traits.Get(__instance.personality.joyTrait);
-                __instance.joyTrait = joyTrait;
+                // --- Joy trait (from config) ---
+                string joyId = ConfigData.GetOverjoyed();
+                if (!string.IsNullOrEmpty(joyId))
+                {
+                    __instance.personality.joyTrait = joyId;
+                    Trait joyTrait = Db.Get().traits.TryGet(joyId);
+                    if (joyTrait != null)
+                        __instance.joyTrait = joyTrait;
+                }
+                else
+                {
+                    Trait joyTrait = Db.Get().traits.TryGet(__instance.personality.joyTrait);
+                    if (joyTrait != null)
+                        __instance.joyTrait = joyTrait;
+                }
 
                 __instance.stickerType = __instance.personality.stickerType;
 
-                Trait congenitalTrait = Db.Get().traits.Get(__instance.personality.congenitaltrait);
-                __instance.congenitaltrait = congenitalTrait.Name == "None" ? null : congenitalTrait;
+                // --- Congenital trait (from personality, not config) ---
+                string congenitalId = __instance.personality.congenitaltrait;
+                if (!string.IsNullOrEmpty(congenitalId))
+                {
+                    Trait congenitalTrait = Db.Get().traits.TryGet(congenitalId);
+                    if (congenitalTrait != null && congenitalTrait.Name != "None")
+                    {
+                        __instance.congenitaltrait = congenitalTrait;
+                        // Add congenital trait to Traits list (game does this via SelectTrait)
+                        __instance.Traits.Add(congenitalTrait);
+                        var traitVal = congenitalTrait.PositiveTrait
+                            ? DUPLICANTSTATS.GOODTRAITS.Find(m => m.id == congenitalTrait.Id)
+                            : DUPLICANTSTATS.BADTRAITS.Find(m => m.id == congenitalTrait.Id);
+                        if (!string.IsNullOrEmpty(traitVal.id))
+                        {
+                            selectedTraits.Add(traitVal.id);
+                            statDelta += traitVal.statBonus;
+                            __instance.rarityBalance += congenitalTrait.PositiveTrait ? -traitVal.rarity : traitVal.rarity;
+                        }
+                        if (congenitalTrait.disabledChoreGroups != null)
+                        {
+                            for (int i = 0; i < congenitalTrait.disabledChoreGroups.Length; i++)
+                            {
+                                if (congenitalTrait.disabledChoreGroups[i] != null)
+                                    disabled_chore_groups.Add(congenitalTrait.disabledChoreGroups[i]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        __instance.congenitaltrait = null;
+                    }
+                }
+                else
+                {
+                    __instance.congenitaltrait = null;
+                }
 
+                // --- Add good/bad traits ---
                 Func<List<DUPLICANTSTATS.TraitVal>, bool, bool> addTrait = (traitPossibilities, positiveTrait) =>
                 {
                     if (__instance.Traits.Count > DUPLICANTSTATS.MAX_TRAITS)
@@ -71,25 +142,35 @@ namespace SuperPOD
 
                     foreach (var item in shuffled)
                     {
-                        if (Game.IsCorrectDlcActiveForCurrentSave(item) && !selectedTraits.Contains(item.id))
-                        {
-                            Trait trait = Db.Get().traits.TryGet(item.id);
-                            if (trait != null)
-                            {
-                                selectedTraits.Add(item.id);
-                                statDelta += item.statBonus;
-                                __instance.rarityBalance += positiveTrait ? -item.rarity : item.rarity;
-                                __instance.Traits.Add(trait);
+                        if (!Game.IsCorrectDlcActiveForCurrentSave(item))
+                            continue;
+                        if (selectedTraits.Contains(item.id))
+                            continue;
+                        if (item.doNotGenerateTrait)
+                            continue;
 
-                                if (trait.disabledChoreGroups != null)
-                                {
-                                    for (int i = 0; i < trait.disabledChoreGroups.Length; i++)
-                                        disabled_chore_groups.Add(trait.disabledChoreGroups[i]);
-                                }
-                                return true;
+                        Trait trait = Db.Get().traits.TryGet(item.id);
+                        if (trait == null)
+                            continue;
+
+                        // Skip traits that disable chores for starter minions in debug mode
+                        if (is_starter_minion && !trait.ValidStarterTrait)
+                            continue;
+
+                        selectedTraits.Add(item.id);
+                        statDelta += item.statBonus;
+                        __instance.rarityBalance += positiveTrait ? -item.rarity : item.rarity;
+                        __instance.Traits.Add(trait);
+
+                        if (trait.disabledChoreGroups != null)
+                        {
+                            for (int i = 0; i < trait.disabledChoreGroups.Length; i++)
+                            {
+                                if (trait.disabledChoreGroups[i] != null)
+                                    disabled_chore_groups.Add(trait.disabledChoreGroups[i]);
                             }
-                            Debug.LogWarning("Trying to add nonexistent trait: " + item.id);
                         }
+                        return true;
                     }
                     return false;
                 };
@@ -98,15 +179,18 @@ namespace SuperPOD
                 int negativeTarget = ConfigData.GetNegativeTraitsNumber();
                 int positiveCount = 0;
                 int negativeCount = 0;
+                int maxAttempts = (positiveTarget + negativeTarget) * 4;
 
-                while (negativeCount < negativeTarget || positiveCount < positiveTarget)
+                while (maxAttempts > 0 && (negativeCount < negativeTarget || positiveCount < positiveTarget))
                 {
                     if (negativeCount < negativeTarget && addTrait(DUPLICANTSTATS.BADTRAITS, false))
                         negativeCount++;
                     if (positiveCount < positiveTarget && addTrait(DUPLICANTSTATS.GOODTRAITS, true))
                         positiveCount++;
+                    maxAttempts--;
                 }
 
+                __instance.IsValid = true;
                 __result = statDelta;
                 return false;
             }
